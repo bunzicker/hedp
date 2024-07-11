@@ -19,8 +19,7 @@ pdpr.dll:
 	$(FC) $(FCFlags) -o pdpr/functions.dll pdpr/functions.f90
 
 radiation.dll:
-	$(FC) $(FCFlags) -o radiation/radiation_calculator.dll \
-	radiation/radiation_calculator.f90
+	$(FC) $(FCFlags) -o radiation/radiation_calculator.dll radiation/radiation_calculator.f90
 
 clean:
-	$(RM)  
+	@$(RM)  

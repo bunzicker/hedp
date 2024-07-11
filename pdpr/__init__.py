@@ -36,7 +36,9 @@ class c_double_complex(ct.Structure):
 #-------------------------------------------------------------------------------
 # Load dll
 Folder = os.path.dirname(os.path.abspath(__file__))
-lib = ct.CDLL(Folder + r'\functions.dll', winmode=0)
+# lib = ct.CDLL(Folder + r'\functions.dll', winmode=0)
+lib = ct.CDLL(Folder + r'\pdpr_parallel.dll', winmode=0)
+
 
 # Create argument types
 vec_1d_ptr = np_ct.ndpointer(c_double, ndim = 1)
@@ -54,14 +56,15 @@ lib.propagator.argtypes = [gen_vec_ptr_cplx,    # U1
                            vec_1d_ptr, c_int,   # y2, n_y2
                            c_double,            # z2
                            gen_vec_ptr_cplx,    # U2
-                           c_double             # k
+                           c_double,             # k
+                           c_int                # n_threads
                            ]
 #-------------------------------------------------------------------------------
 # Wrappers
 def propagator(U1: NDArray[complex_], 
                x1: NDArray[float_], y1: NDArray[float_], z1: float, 
                x2: NDArray[float_], y2: NDArray[float_], z2: float,
-               k: float
+               k: float, n_threads: int|None = os.cpu_count()
                ) -> NDArray[complex_]:
     """
         Propagate U1 that is defined in the z1 plane to the z2 plane.
@@ -82,6 +85,7 @@ def propagator(U1: NDArray[complex_],
     U2 = np.zeros((n_x2, n_y2), dtype = complex)
 
     # Call fortran
-    lib.propagator(U1, x1, n_x1, y1, n_y1, z1, x2, n_x2, y2, n_y2, z2, U2, k)
+    lib.propagator(U1, x1, n_x1, y1, n_y1, z1, x2, n_x2, y2, n_y2, z2, 
+                    U2, k, n_threads)
 
     return U2
