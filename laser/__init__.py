@@ -9,7 +9,7 @@ def scalar_vortex_field(x: float|NDArray[float_],
                         z: float|NDArray[float_], 
                         wt: float|NDArray[float_],
                         amp: float, spotsize: float, pulse_dur: float, 
-                        p: int, l: int, 
+                        p: int, l: int|float, 
                         w_t0: float = 0.0) -> NDArray[complex_]:
     """ 
     Create a Laguerre-Gaussian laser defined at position (x, y, z) at time t. 
@@ -63,7 +63,7 @@ def scalar_vortex_field_real_args(x: float|NDArray[float_],
                                   t: float|NDArray[float_], 
                                   wavelength: float, 
                                   spotsize: float, pulse_dur: float, 
-                                  p: int, l: int, 
+                                  p: int, l: int|float, 
                                   t0: float = 0.0) -> NDArray[complex_]:
     """
     This function is a wrapper for scalar_vortex_field that automatically
@@ -104,7 +104,7 @@ def scalar_vortex_field_real_args(x: float|NDArray[float_],
                                      w_t0 = t0_norm)
     return norm_field
 
-def get_vector_E(scalar_field: NDArray[float_], 
+def get_vector_E(scalar_field: NDArray[float_|complex_], 
                  x: NDArray[float_], y: NDArray[float_], 
                     kL: float = 1) -> NDArray[float_]:
     """ Numerically calculate the electric field components from a scalar beam 
@@ -131,7 +131,7 @@ def get_vector_E(scalar_field: NDArray[float_],
 
     return np.transpose([Ex, Ey, Ez])
 
-def get_vector_B(scalar_field: NDArray[float_], 
+def get_vector_B(scalar_field: NDArray[float_|complex_], 
                  x: NDArray[float_], y: NDArray[float_], 
                     kL: float = 1) -> NDArray[float_]:
     """ Numerically calculate the magnetic field components from a scalar beam 
@@ -184,6 +184,7 @@ def get_oam(field: NDArray[complex_], x:  NDArray[float_],
     dEdTheta = -y[None, :]*dEdx + x[:, None]*dEdy
     integrand = np.conjugate(field)*dEdTheta
 
+    # Use abs instead of real to make positive
     Lz = np.abs(1j*np.trapz(np.trapz(
                             integrand, 
                         y, axis = 1), 
