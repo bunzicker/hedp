@@ -88,7 +88,7 @@ def scalar_vortex_field_real_args(x: float|NDArray[float_],
 
     # Normalization factors
     kL = 2*np.pi/wavelength     # Wavenumber
-    wL = con.c/kL               # Angular frequency
+    wL = con.c*kL               # Angular frequency
 
     # Get dimensionless params
     x_norm = kL*x
