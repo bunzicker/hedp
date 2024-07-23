@@ -1,16 +1,16 @@
 import numpy as np
 from numpy.typing import NDArray
-from numpy import float_, complex_
+from numpy import float64, complex128
 import scipy.constants as con
 import scipy.special as spec
 
-def scalar_vortex_field(x: float|NDArray[float_], 
-                        y: float|NDArray[float_], 
-                        z: float|NDArray[float_], 
-                        wt: float|NDArray[float_],
+def scalar_vortex_field(x: float|NDArray[float64], 
+                        y: float|NDArray[float64], 
+                        z: float|NDArray[float64], 
+                        wt: float|NDArray[float64],
                         amp: float, spotsize: float, pulse_dur: float, 
                         p: int, l: int|float, 
-                        w_t0: float = 0.0) -> NDArray[complex_]:
+                        w_t0: float = 0.0) -> NDArray[complex128]:
     """ 
     Create a Laguerre-Gaussian laser defined at position (x, y, z) at time t. 
     This function assumes the laser propagates in the +z direction and that all 
@@ -57,14 +57,14 @@ def scalar_vortex_field(x: float|NDArray[float_],
 
     return field
 
-def scalar_vortex_field_real_args(x: float|NDArray[float_], 
-                                  y: float|NDArray[float_], 
-                                  z: float|NDArray[float_], 
-                                  t: float|NDArray[float_], 
+def scalar_vortex_field_real_args(x: float|NDArray[float64], 
+                                  y: float|NDArray[float64], 
+                                  z: float|NDArray[float64], 
+                                  t: float|NDArray[float64], 
                                   wavelength: float, 
                                   spotsize: float, pulse_dur: float, 
                                   p: int, l: int|float, 
-                                  t0: float = 0.0) -> NDArray[complex_]:
+                                  t0: float = 0.0) -> NDArray[complex128]:
     """
     This function is a wrapper for scalar_vortex_field that automatically
     converts parameters into dimensionless units and returns a normalized scalar
@@ -104,9 +104,9 @@ def scalar_vortex_field_real_args(x: float|NDArray[float_],
                                      w_t0 = t0_norm)
     return norm_field
 
-def get_vector_E(scalar_field: NDArray[float_|complex_], 
-                 x: NDArray[float_], y: NDArray[float_], 
-                    kL: float = 1) -> NDArray[float_]:
+def get_vector_E(scalar_field: NDArray[float64|complex128], 
+                 x: NDArray[float64], y: NDArray[float64], 
+                    kL: float = 1) -> NDArray[float64]:
     """ Numerically calculate the electric field components from a scalar beam 
         propagating in the z_hat direction using the approximation developed by
         Erikson and Singh in Phys. Rev. E 49, 5778 (1994). 
@@ -131,9 +131,9 @@ def get_vector_E(scalar_field: NDArray[float_|complex_],
 
     return np.transpose([Ex, Ey, Ez])
 
-def get_vector_B(scalar_field: NDArray[float_|complex_], 
-                 x: NDArray[float_], y: NDArray[float_], 
-                    kL: float = 1) -> NDArray[float_]:
+def get_vector_B(scalar_field: NDArray[float64|complex128], 
+                 x: NDArray[float64], y: NDArray[float64], 
+                    kL: float = 1) -> NDArray[float64]:
     """ Numerically calculate the magnetic field components from a scalar beam 
         propagating in the z_hat direction using the approximation developed by
         Erikson and Singh in Phys. Rev. E 49, 5778 (1994). 
@@ -159,8 +159,8 @@ def get_vector_B(scalar_field: NDArray[float_|complex_],
     return np.transpose([Bx, By, Bz])
 
 
-def get_oam(field: NDArray[complex_], x:  NDArray[float_], 
-            y: NDArray[float_]) -> float:
+def get_oam(field: NDArray[complex128], x:  NDArray[float64], 
+            y: NDArray[float64]) -> float:
     """ Calculate the amount of orbital angular momentum (OAM) in a paraxial 
         laser field. This functions utilizes the approach described in Zangwill 
         Ch. 16.7.5. 
@@ -173,7 +173,7 @@ def get_oam(field: NDArray[complex_], x:  NDArray[float_],
     Returns:
     l_retreived: float, The measured OAM.
     """
-    norm = np.real(np.trapz(np.trapz(
+    norm = np.real(np.trapezoid(np.trapezoid(
                 np.conjugate(field)*field, 
             y, axis = 1),
             x, axis = 0))
@@ -185,7 +185,7 @@ def get_oam(field: NDArray[complex_], x:  NDArray[float_],
     integrand = np.conjugate(field)*dEdTheta
 
     # Use abs instead of real to make positive
-    Lz = np.abs(1j*np.trapz(np.trapz(
+    Lz = np.abs(1j*np.trapezoid(np.trapezoid(
                             integrand, 
                         y, axis = 1), 
                         x, axis = 0))

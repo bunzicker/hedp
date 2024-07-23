@@ -6,7 +6,7 @@ from ctypes import c_double, c_int
 import numpy as np
 import numpy.ctypeslib as np_ct
 from numpy.typing import NDArray
-from numpy import float_, complex_
+from numpy import float64, complex128
 
 """
     This package implements the phase diversity-phase retrieval algorithm 
@@ -45,7 +45,7 @@ vec_1d_ptr = np_ct.ndpointer(c_double, ndim = 1)
 gen_vec_ptr_dbl = np_ct.ndpointer(c_double)
 gen_vec_ptr_cplx = np_ct.ndpointer(np.complex128)
 
-c_complex_ptr = ct.POINTER(c_double_complex)
+c_complex128ptr = ct.POINTER(c_double_complex)
 
 # Set argtypes
 lib.propagator.argtypes = [gen_vec_ptr_cplx,    # U1
@@ -61,11 +61,11 @@ lib.propagator.argtypes = [gen_vec_ptr_cplx,    # U1
                            ]
 #-------------------------------------------------------------------------------
 # Wrappers
-def propagator(U1: NDArray[complex_], 
-               x1: NDArray[float_], y1: NDArray[float_], z1: float, 
-               x2: NDArray[float_], y2: NDArray[float_], z2: float,
+def propagator(U1: NDArray[complex128], 
+               x1: NDArray[float64], y1: NDArray[float64], z1: float, 
+               x2: NDArray[float64], y2: NDArray[float64], z2: float,
                k: float, n_threads: int|None = os.cpu_count()
-               ) -> NDArray[complex_]:
+               ) -> NDArray[complex128]:
     """
         Propagate U1 that is defined in the z1 plane to the z2 plane.
 

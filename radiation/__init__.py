@@ -6,7 +6,7 @@ from ctypes import c_double, c_int
 import numpy as np
 import numpy.ctypeslib as np_ct
 from numpy.typing import NDArray
-from numpy import float_
+from numpy import float64
 
 
 """
@@ -40,7 +40,7 @@ lib.field_over_time.argtypes = [generic_vec_ptr, generic_vec_ptr,
 
 #-------------------------------------------------------------------------------
 # Python wrappers for the Fortran functions contained in lib
-def cross(a: NDArray[float_], b:NDArray[float_]) -> NDArray[float_]:
+def cross(a: NDArray[float64], b:NDArray[float64]) -> NDArray[float64]:
     """
     Calculate the cross product to vectors a and b. 
 
@@ -55,11 +55,11 @@ def cross(a: NDArray[float_], b:NDArray[float_]) -> NDArray[float_]:
     return c
     
 
-def calculate_field(r_part: NDArray[float_], 
-                    r_det: NDArray[float_], 
-                    beta: NDArray[float_], 
-                    beta_dot: NDArray[float_]
-                    ) -> NDArray[float_]:
+def calculate_field(r_part: NDArray[float64], 
+                    r_det: NDArray[float64], 
+                    beta: NDArray[float64], 
+                    beta_dot: NDArray[float64]
+                    ) -> NDArray[float64]:
     """ Calculate the acceleration field at r_det given the position, velocity, 
      and acceleration of the source particle. 
       
@@ -77,8 +77,8 @@ def calculate_field(r_part: NDArray[float_],
     return E_field
 
 def interpolator(t: float, t_prev: float, 
-                 t_det_array: NDArray[float_], 
-                 field: NDArray[float_]) -> NDArray[float_]:
+                 t_det_array: NDArray[float64], 
+                 field: NDArray[float64]) -> NDArray[float64]:
     
     nt_det = len(t_det_array)
     output = np.zeros((nt_det, 3), order = 'F')
@@ -86,12 +86,12 @@ def interpolator(t: float, t_prev: float,
 
     return output
 
-def field_over_time(r_over_time: NDArray[float_],
-                    beta_over_time: NDArray[float_], 
-                    sim_times: NDArray[float_],
-                    det_times: NDArray[float_],
-                    det_pos: NDArray[float_]
-                    ) -> NDArray[float_]:
+def field_over_time(r_over_time: NDArray[float64],
+                    beta_over_time: NDArray[float64], 
+                    sim_times: NDArray[float64],
+                    det_times: NDArray[float64],
+                    det_pos: NDArray[float64]
+                    ) -> NDArray[float64]:
     
     # Convert all arrays to Fortran contiguous
     r_over_time = np.asfortranarray(r_over_time)

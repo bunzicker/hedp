@@ -24,7 +24,7 @@ If you would like to recompile the shared libraries use ```make clean``` and the
 [```hedp.pdpr```](pdpr) implements the phase diversity-phase retrieval (PD-PR) method described in [Nick Czapla's PhD. thesis.](http://rave.ohiolink.edu/etdc/view?acc_num=osu1658486928321502) It uses an iterative algorithm to determine the magnitude and phase of the laser's electric field using several images taken different locations relative to the focal plane. 
 
 ## TPS
-[```hedp.tps```](tps) includes some simple code to analyze Thomson Parabola Spectrometer (TPS) data. Currently, this module's main function is to get the ion energy spectrum from 2D images. More sophisticated analysis may be added later. 
+[```hedp.tps```](tps) includes some simple code to analyze Thomson Parabola Spectrometer (TPS) data. Currently, this module's main function is to get the ion energy spectrum from 2D images. Details of the specific implementation of OSU's TPS can be found in Connor Winter's bachelor's thesis ['Development of a new Thomson parabola spectrometer for analysis of laser accelerated ions'](https://core.ac.uk/outputs/323062055/). More sophisticated analysis may be added later. 
 
 > [!WARNING]
 > This is still a work in progress. Expect updates soon. 
