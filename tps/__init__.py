@@ -7,19 +7,21 @@ from numpy.typing import NDArray
 
 import scipy.constants as con
 from scipy.spatial import KDTree
+from scipy.spatial.distance import cdist
 
 import cv2
 from cv2.typing import MatLike
 
 """ 
-    This package is meant to analyze extract ion energy energy spectra from data
+    This package is meant to extract ion energy spectra from data
     collected by a Thomson Parabola Spectrometer (TPS). A TPS works by using 
     electric and magnetic fields to separate particles based on their energy and
-    charge-to-mass ratio. This allows simultaneous mearsurement of energy 
-    spectra for several different positively charged ion species. This codes 
+    charge-to-mass ratio. This allows simultaneous measurement of energy 
+    spectra for several different positively charged ion species. This code 
     uses solutions to the nonrelativistic equation of motion for
     charged particles in piecewise-constant electromagnetic fields to calculate
-    their positions at the detector. 
+    their positions at the detector. We typically measure energies to tens of 
+    MeV. 
 
     All default values are specific to OSU's home-built TPS. More information
     can be found in Connor Winter's bachelor's thesis 'Development of a new 
@@ -51,7 +53,8 @@ def load_img(path: str | Path, background: int = 0,
     if grayscale:
         img = img.convert('L')
 
-    return np.array(img) - background
+    return np.array(img).clip(background) - background
+
 
 
 def tps_trajectory(m: float, q: float, spec_len: float = 0.85,
@@ -120,6 +123,7 @@ def tps_trajectory(m: float, q: float, spec_len: float = 0.85,
     return np.array([xF, yF])
 
 
+
 def tps_counts(img: NDArray[int_], m: float, q: float, x0: float, y0: float, 
                rot_ang: float, px_dens: float = 119.6, pinhole_sz = 750e-6,
                part_cal: float = 1, U_min: float = 1, U_max: float = 30, 
@@ -145,7 +149,6 @@ def tps_counts(img: NDArray[int_], m: float, q: float, x0: float, y0: float,
     U_min: The minimum energy to calculate the trajectories. (in MeV)
     U_max: The maximum energy to calculate trajectories. (in MeV)
     dU: The energy resolution used to calculate the TPS trace. (in MeV)
-
     
     Returns:
     --------------------------------------
@@ -154,47 +157,67 @@ def tps_counts(img: NDArray[int_], m: float, q: float, x0: float, y0: float,
 
     # Get particle trajectories
     x, y = 100*tps_trajectory(m, q, U_min = U_min, U_max = U_max, dU = dU)
-
-    # Get boundaries of the region of interest.
     x_px = x0 + x*px_dens       # Center line
-    y_px = y0 + y*px_dens 
+    y_px = y0 + y*px_dens
+    rc = np.column_stack((x_px, y_px))
 
+    # Get boundaries of the region of interest surrounding the tps trace.
     x_bot = x_px - 100*pinhole_sz*px_dens/2
     y_bot = y_px + 100*pinhole_sz*px_dens/2
     x_top = x_px + 100*pinhole_sz*px_dens/2
     y_top = y_px - 100*pinhole_sz*px_dens/2
     x_bnd = np.concatenate((x_top, x_bot[::-1], [x_top[0]]))
     y_bnd = np.concatenate((y_top, y_bot[::-1], [y_top[0]]))
-    r_bnd = np.array([x_bnd, y_bnd]).T
+    r_bnd = np.column_stack([x_bnd, y_bnd])
 
     # Rotate img
     rot_mat = cv2.getRotationMatrix2D((x0, y0), rot_ang, 1)
     rot_img = cv2.warpAffine(img, rot_mat, img.shape[::-1])
 
-    # # # Interpolate to get pixel coordinates of x_bnd, y_bnd
-    # Nx = len(img[0])
-    # Ny = len(img)
-    # x_det = np.linspace(1, Nx, Nx) - x0
-    # y_det = np.linspace(1, Ny, Ny) - y0
+    # Create mask
+    mask = np.zeros(rot_img.shape, dtype = np.uint8)
+    cv2.fillPoly(mask, [np.rint(r_bnd).astype(np.int32)], (255, 255, 255))
+    masked_img = cv2.bitwise_and(rot_img, mask)
+    roi_pixels = np.argwhere(masked_img)         # Indeces of nonzero pixels
 
-    # # Get closest points in rot_img for each value in (x_px, y_px).
-    # tree = KDTree(rot_img)
-    # nearest_neighbors, nn_index = tree.query(r_bnd)
-
-    return np.array([x_px, y_px]), r_bnd.T, rot_img
-    # return spec, np.array([x_px, y_px]), rot_img
-
-# Write a function to rotate the coordinates of the tps trace instead of the 
-# rotating the image. This will be much computationaly cheaper.
-def rotate_coordinates(x, y, ang, x0, y0) -> NDArray[float64]:
-    """ Rotate coordinates around the point(x0, y0).
+    # For every pixel in the region of interest, find the closest point along rc
+    # and add its value to the index in spec corresponding to rc_closest.
+    dist = cdist(rc, roi_pixels[:, ::-1], 'euclidean')
+    rc_index = np.argmin(dist, axis = 0)
+    spec = np.zeros(len(rc))
+    np.add.at(spec, rc_index, rot_img[roi_pixels[:, 0], roi_pixels[:, 1]])
     
+    return spec, r_bnd, rot_img
+
+
+
+def circ_from_pts(p1: tuple[float, float], 
+                    p2: tuple[float, float], 
+                    p3: tuple[float, float]
+                ) -> tuple[tuple[float, float]|None, float]:
+    """ Return the center and radius of the circle passing through any 3 points.
+        In case the 3 points form a line, returns (None, infinity).
+
     Parameters:
+    --------------------------------------
+    p1, p2, p3: Tuples containing (x, y) pairs for three points on the circle.
 
     Returns:
-    r_rot:
+    --------------------------------------
+    center = (cx, cy) containing the center of the circle
+    radius: The radius of the circle.
     """
-
-
-
-    return np.zeros(100)
+    temp = p2[0] * p2[0] + p2[1] * p2[1]
+    bc = (p1[0] * p1[0] + p1[1] * p1[1] - temp) / 2
+    cd = (temp - p3[0] * p3[0] - p3[1] * p3[1]) / 2
+    det = (p1[0] - p2[0]) * (p2[1] - p3[1]) - (p2[0] - p3[0]) * (p1[1] - p2[1])
+    
+    if abs(det) < 1.0e-6:
+        return (None, np.inf)
+    
+    # Center of circle
+    cx = (bc*(p2[1] - p3[1]) - cd*(p1[1] - p2[1])) / det
+    cy = ((p1[0] - p2[0]) * cd - (p2[0] - p3[0]) * bc) / det
+    
+    radius = np.sqrt((cx - p1[0])**2 + (cy - p1[1])**2)
+    return (cx, cy), radius
