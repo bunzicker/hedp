@@ -66,28 +66,27 @@ MODULE PDPR
     REAL(cd), DIMENSION(n_y2), INTENT(in) :: y2
     COMPLEX(c_cplx), DIMENSION(n_x2, n_y2), INTENT(OUT) :: U2
 
-    INTEGER(ci) :: ix2, iy2
-    REAL(cd) :: dz, x2i, y2i
+    INTEGER(ci) :: i_x2, i_y2
+    REAL(cd) :: dz, x2_i, y2_i
     REAL(cd), DIMENSION(n_x1, n_y1) :: xx1, yy1, dx_sq, dy_sq
     REAL(cd), DIMENSION(n_x1, n_y1) :: separation
     COMPLEX(c_cplx), DIMENSION(n_x1, n_y1) :: term1, term2, term3, integrand
     COMPLEX(c_cplx) :: ik, int_res
     
     ! Useful constants/arrays
-    ik = CMPLX(0.0, k, kind=c_cplx)
     dz = z2 - z1
+    ik = CMPLX(0.0, SIGN(k, dz), kind=c_cplx) ! Neg sign when moving backwards
     CALL meshgrid(x1, y1, n_x1, n_y1, xx1, yy1)
 
     ! Loop through all pixels in x2, y2
-    DO iy2 = 1, n_y2
+    DO i_y2 = 1, n_y2
 
-        y2i = y2(iy2)
-        dy_sq = (y2i - yy1)**2
+        y2_i = y2(i_y2)
+        dy_sq = (y2_i - yy1)**2
 
-        DO ix2 = 1, n_x2
-
-            x2i = x2(ix2)
-            dx_sq = (x2i - xx1)**2
+        DO i_x2 = 1, n_x2
+            x2_i = x2(i_x2)
+            dx_sq = (x2_i - xx1)**2
 
             separation(:, :) = SQRT(dx_sq(:, :) + dy_sq(:, :) + dz**2)
             term1 = U1/separation**2
@@ -96,7 +95,7 @@ MODULE PDPR
 
             integrand = term1*term2*term3
             CALL trapz_2d(integrand, x1, y1, n_x1, n_y1, int_res) ! Integrate over x1, y1
-            U2(ix2, iy2) = int_res*dz/(2.0_cd*pi)
+            U2(i_x2, i_y2) = int_res*ABS(dz)/(2.0_cd*pi)
         END DO
     END DO
 END SUBROUTINE propagator

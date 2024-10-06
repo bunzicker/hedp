@@ -39,15 +39,16 @@ def scalar_vortex_field(x: float|NDArray[float64],
     zr = spotsize**2/2
     norm = np.sqrt(spec.factorial(p)/spec.factorial(p + np.abs(l)))
 
-    # Laser phase
-    guoy = (2*p + np.abs(l))*np.arctan(z/zr)        # Guoy phase
-    Rz_inv = z/(z**2 + zr**2)                       # Inverse radius of curvature
-    phase = np.exp(1j*(z - wt - 0.5*r**2*Rz_inv + guoy - l*phi))
-
     # Spatial profile
     wz = spotsize * np.sqrt(1 + (z/zr)**2)          # Spotsize
     lg_term = spec.genlaguerre(p, np.abs(l))(2*r**2/wz**2)
     spat_prof = (r*np.sqrt(2)/wz)**np.abs(l)*np.exp(-r**2/wz**2)*lg_term
+
+    # Laser phase
+    guoy = (2*p + np.abs(l) + 1)*np.arctan(z/zr)    # Guoy phase
+    q = z/(2*zr)
+    # phase = np.exp(1j*(z - wt + q*r**2/wz**2 - guoy + l*phi))
+    phase = np.exp(1j*(q*r**2/wz**2 - guoy + l*phi))
 
     # Temporal profile
     sigma = np.sqrt(2)*pulse_dur/(2*np.sqrt(np.log(2)))
@@ -106,7 +107,7 @@ def scalar_vortex_field_real_args(x: float|NDArray[float64],
 
 def get_vector_E(scalar_field: NDArray[float64|complex128], 
                  x: NDArray[float64], y: NDArray[float64], 
-                    kL: float = 1) -> NDArray[float64]:
+                    kL: float = 1) -> NDArray[complex128]:
     """ Numerically calculate the electric field components from a scalar beam 
         propagating in the z_hat direction using the approximation developed by
         Erikson and Singh in Phys. Rev. E 49, 5778 (1994). 
@@ -126,10 +127,10 @@ def get_vector_E(scalar_field: NDArray[float64|complex128],
     """
 
     Ex = scalar_field
-    Ey = -0.5*np.gradient(np.gradient(scalar_field, y, axis = 0), x, axis = 1)/kL**2
-    Ez = 1j*np.gradient(scalar_field, x, axis = 1)/kL
+    Ey = -0.5*np.gradient(np.gradient(scalar_field, y, axis = 1), x, axis = 0)/kL**2
+    Ez = 1j*np.gradient(scalar_field, x, axis = 0)/kL
 
-    return np.transpose([Ex, Ey, Ez])
+    return np.stack((Ex, Ey, Ez), axis = -1)
 
 def get_vector_B(scalar_field: NDArray[float64|complex128], 
                  x: NDArray[float64], y: NDArray[float64], 
@@ -152,11 +153,11 @@ def get_vector_B(scalar_field: NDArray[float64|complex128],
         field accurate to second order.
     """
 
-    Bx = -0.5*np.gradient(np.gradient(scalar_field, y, axis = 0), x, axis = 1)/kL**2
+    Bx = -0.5*np.gradient(np.gradient(scalar_field, y, axis = 1), x, axis = 0)/kL**2
     By = scalar_field
-    Bz = 1j*np.gradient(scalar_field, y, axis = 0)/kL
+    Bz = 1j*np.gradient(scalar_field, y, axis = 1)/kL
 
-    return np.transpose([Bx, By, Bz])
+    return np.stack((Bx, By, Bz), axis = -1)
 
 
 def get_oam(field: NDArray[complex128], x:  NDArray[float64], 

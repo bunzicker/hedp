@@ -36,8 +36,8 @@ class c_double_complex(ct.Structure):
 #-------------------------------------------------------------------------------
 # Load dll
 Folder = os.path.dirname(os.path.abspath(__file__))
-# lib = ct.CDLL(Folder + r'\functions.dll', winmode=0)
-lib = ct.CDLL(Folder + r'\pdpr_parallel.dll', winmode=0)
+lib = ct.CDLL(Folder + r'\functions.dll', winmode=0)
+# lib = ct.CDLL(Folder + r'\pdpr_parallel.dll', winmode=0)
 
 
 # Create argument types
@@ -57,14 +57,13 @@ lib.propagator.argtypes = [gen_vec_ptr_cplx,    # U1
                            c_double,            # z2
                            gen_vec_ptr_cplx,    # U2
                            c_double,             # k
-                           c_int                # n_threads
                            ]
 #-------------------------------------------------------------------------------
 # Wrappers
 def propagator(U1: NDArray[complex128], 
                x1: NDArray[float64], y1: NDArray[float64], z1: float, 
                x2: NDArray[float64], y2: NDArray[float64], z2: float,
-               k: float, n_threads: int|None = os.cpu_count()
+               k: float
                ) -> NDArray[complex128]:
     """
         Propagate U1 that is defined in the z1 plane to the z2 plane.
@@ -86,6 +85,32 @@ def propagator(U1: NDArray[complex128],
 
     # Call fortran
     lib.propagator(U1, x1, n_x1, y1, n_y1, z1, x2, n_x2, y2, n_y2, z2, 
-                    U2, k, n_threads)
+                    U2, k)
 
     return U2
+
+#-------------------------------------------------------------------------------
+def residuals(field: NDArray[complex128], prev_field: NDArray[complex128]):
+    """ Return the squared residual between two images.
+    
+    Parameters:
+    -----------------------------------------
+    
+    Returns:
+    -----------------------------------------
+    """
+
+    # Calculate and normalize intensity
+    # inten = np.abs(field)**2
+    # prev_inten = np.abs(prev_field)**2
+    # diff = inten - prev_inten
+    
+    # Handle zeros
+    # inten[inten == 0] = 1e-6
+
+
+    diff = np.abs(field - prev_field)**2
+    inten = np.abs(field)**2
+    inten[inten == 0] = 1e-6
+
+    return np.abs(np.average(diff, weights=inten))
