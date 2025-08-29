@@ -11,27 +11,36 @@ def scalar_vortex_field(x: float|NDArray[float64],
                         amp: float, spotsize: float, pulse_dur: float, 
                         p: int, l: int|float, 
                         w_t0: float = 0.0) -> NDArray[complex128]:
-    """ 
-    Create a Laguerre-Gaussian laser defined at position (x, y, z) at time t. 
-    This function assumes the laser propagates in the +z direction and that all 
-    parameters are given in dimensionless units.
+    """ Create a Laguerre-Gaussian laser defined at position (x, y, z) at time t. This function assumes the laser propagates in the +z direction and that all parameters are given in dimensionless units.
 
-    -----------------------------------------
-    Parameters:
-    x, y, z: float, The position (in units of kL*r) of the laser.
-    wt: float, The time (in units wL*t) to calculate the laser.
-    amp: float, The normalized electric field strength (a0).
-    spotsize: float, The size of the beam waist (in units kL*w0).
-    pulse_dur: float, The intensity FWHM of the laser (in units wL*t).
-    p: int, The radial index of the vortex beam
-    l: int, the laser twist index
-    w_t0: float, The time (in units wL*t) corresponding to the maximum intensity
-            at z = 0
 
-    Returns:
-    field: float, The electric field defined at the time/position given by t,
+    Parameters
+    ----------
+    x, y, z : float | NDArray[float64]
+        The position (in units of kL*r) of the laser
+    z : float | NDArray[float64]
+        _description_
+    wt : float | NDArray[float64]
+        The time (in units wL*t) to calculate the laser.
+    amp : float
+        The normalized electric field strength (a0).
+    spotsize : float
+        The size of the beam waist (in units kL*w0)
+    pulse_dur : float
+        The intensity FWHM of the laser (in units wL*t).
+    p : int
+        The radial index of the vortex beam
+    l : int | float
+        the laser twist index
+    w_t0 : float, optional
+        The time (in units wL*t) corresponding to the maximum intensity at z = 0
+
+    Returns
+    -------
+    field : NDArray[complex128]
+        The electric field defined at the time/position given by t,
         (x, y, z) and characterized by the other arguments.
-    """
+    """    
 
     r = np.sqrt(x**2 + y**2)
     phi = np.arctan2(y, x)
@@ -66,27 +75,32 @@ def scalar_vortex_field_real_args(x: float|NDArray[float64],
                                   spotsize: float, pulse_dur: float, 
                                   p: int, l: int|float, 
                                   t0: float = 0.0) -> NDArray[complex128]:
-    """
-    This function is a wrapper for scalar_vortex_field that automatically
-    converts parameters into dimensionless units and returns a normalized scalar
-    field. 
+    """ This function is a wrapper for scalar_vortex_field that automatically converts parameters into dimensionless units and returns a normalized scalar field.
 
-    Parameters:
-    x, y, z: The position (in m) of the laser.
-    wt: The time (in s) to calculate the laser.
-    spotsize: The size of the beam waist (in m).
-    pulse_dur: The intensity FWHM of the laser (in s).
-    p: The radial index of the vortex beam
-    l: The laser twist index
-    t0: The time (in units s) corresponding to the maximum intensity
-        at z = 0
+    Parameters
+    ----------
+    x, y, z : float | NDArray[float64]
+        The position (in m) of the laser.
+    t : float | NDArray[float64]
+        The time (in s) to calculate the laser.
+    wavelength : float
+        The laser's central wavelength (in m).
+    spotsize : float
+        The size of the beam waist (in m).
+    pulse_dur : float
+       The intensity FWHM of the laser (in s).
+    p : int
+        The radial index of the vortex beam
+    l : int | float
+       The laser twist index
+    t0 : float, optional
+        The time (in units s) corresponding to the maximum intensity at z = 0
 
-    Returns:
-    field: float, The electric field in dimensionless units defined at the 
-        time/position given by t, (x, y, z) and characterized by the other 
-        arguments.
-    """
-
+    Returns
+    -------
+    field : NDArray[complex128]
+        The electric field in  defined at the time/position given by t, (x, y, z) and characterized by the other arguments
+    """    
     # Normalization factors
     kL = 2*np.pi/wavelength     # Wavenumber
     wL = con.c*kL               # Angular frequency
@@ -108,23 +122,22 @@ def scalar_vortex_field_real_args(x: float|NDArray[float64],
 def get_vector_E(scalar_field: NDArray[float64|complex128], 
                  x: NDArray[float64], y: NDArray[float64], 
                     kL: float = 1) -> NDArray[complex128]:
-    """ Numerically calculate the electric field components from a scalar beam 
-        propagating in the z_hat direction using the approximation developed by
-        Erikson and Singh in Phys. Rev. E 49, 5778 (1994). 
+    """ Numerically calculate the electric field components from a scalar beam propagating in the z_hat direction using the approximation developed by Erikson and Singh in Phys. Rev. E 49, 5778 (1994).
 
-    Parameters:
-    scalar_field: 2d array, The scalar field describing the beam in the xy 
-        plane. It should have shape (N, M).
-    x, y: 1d array, The x and y coordinates over which scalar_field is defined. 
-        x should have length N, while y should have length M.
-    kL: float, The laser's wavenumber (in rad/m). By default, this function
-        assumes kL = 1, meaning x and y are given in dimensionless units 
-        (x = kL*x_real).
+    Parameters
+    ----------
+    scalar_field : NDArray[float64 | complex128]
+        The scalar field describing the beam in the xy plane. It should have shape (N, M).
+    x, y : NDArray[float64]
+        The x and y coordinates over which scalar_field is defined. x should have length N, while y should have length M.
+    kL : float, optional
+        The laser's wavenumber (in rad/m). By default, this function assumes kL = 1, meaning x and y are given in dimensionless units (x = kL*x_real).
 
-    Returns:
-    vector_E: 3d array of shape (N, M, 3), The vector components of the electric
-        field accurate to second order.
-    """
+    Returns
+    -------
+    vector_E : NDArray[float64]
+       3d array of shape (N, M, 3), The vector components of the electri field accurate to second order.
+    """    
 
     Ex = scalar_field
     Ey = -0.5*np.gradient(np.gradient(scalar_field, y, axis = 1), x, axis = 0)/kL**2
@@ -135,23 +148,22 @@ def get_vector_E(scalar_field: NDArray[float64|complex128],
 def get_vector_B(scalar_field: NDArray[float64|complex128], 
                  x: NDArray[float64], y: NDArray[float64], 
                     kL: float = 1) -> NDArray[float64]:
-    """ Numerically calculate the magnetic field components from a scalar beam 
-        propagating in the z_hat direction using the approximation developed by
-        Erikson and Singh in Phys. Rev. E 49, 5778 (1994). 
-    
-    Parameters:
-    scalar_field: 2d array, The scalar field describing the beam in the xy 
-        plane. It should have shape (N, M).
-    x, y: 1d array, The x and y coordinates over which scalar_field is defined. 
-        x should have length N, while y should have length M.
-    kL: float, The laser's wavenumber (in rad/m). By default, this function
-        assumes kL = 1, meaning x and y are given in dimensionless units 
-        (x = kL*x_real).
+    """ Numerically calculate the magnetic field components from a scalar beam propagating in the z_hat direction using the approximation developed by Erikson and Singh in Phys. Rev. E 49, 5778 (1994).
 
-    Returns:
-    vector_E: 3d array of shape (N, M, 3), The vector components of the electric
-        field accurate to second order.
-    """
+    Parameters
+    ----------
+    scalar_field : NDArray[float64 | complex128]
+        The scalar field describing the beam in the xy plane. It should have shape (N, M).
+    x, y : NDArray[float64]
+        The x and y coordinates over which scalar_field is defined. x should have length N, while y should have length M.
+    kL : float, optional
+        The laser's wavenumber (in rad/m). By default, this function assumes kL = 1, meaning x and y are given in dimensionless units (x = kL*x_real).
+
+    Returns
+    -------
+    vector_B : NDArray[float64]
+       3d array of shape (N, M, 3), The vector components of the magnetic field accurate to second order.
+    """    
 
     Bx = -0.5*np.gradient(np.gradient(scalar_field, y, axis = 1), x, axis = 0)/kL**2
     By = scalar_field
@@ -162,18 +174,22 @@ def get_vector_B(scalar_field: NDArray[float64|complex128],
 
 def get_oam(field: NDArray[complex128], x:  NDArray[float64], 
             y: NDArray[float64]) -> float:
-    """ Calculate the amount of orbital angular momentum (OAM) in a paraxial 
-        laser field. This functions utilizes the approach described in Zangwill 
-        Ch. 16.7.5. 
-    
-    Parameters:
-    field: The scalar electric field used to calculate the OAM. Must be two 
-        dimensional.
-    x, y: The data coordinates along each axis of field.
-    
-    Returns:
-    l_retreived: float, The measured OAM.
-    """
+    """ Calculate the amount of orbital angular momentum (OAM) in a paraxial laser field. This functions utilizes the approach described in Zangwill Ch. 16.7.5.
+
+    Parameters
+    ----------
+    field : NDArray[complex128]
+        The scalar electric field used to calculate the OAM. Must be two dimensional.
+    x, y : NDArray[float64]
+        The data coordinates along each axis of field.
+    y : NDArray[float64]
+        _description_
+
+    Returns
+    -------
+    l : float
+       The average OAM over the whole field.
+    """    
     norm = np.real(np.trapezoid(np.trapezoid(
                 np.conjugate(field)*field, 
             y, axis = 1),
